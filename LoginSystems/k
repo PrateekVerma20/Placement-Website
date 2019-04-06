@@ -1,0 +1,62 @@
+ <?php 
+    if(isset($_POST['login-submit']))
+    {
+        require 'dbh.inc.php';
+        $usernameINlogin=mysqli_real_escape_string($connection,$_POST['uid']);
+        $passwordINlogin=mysqli_real_escape_string($connection,$_POST['pwd']); 
+     if(empty($usernameINlogin)||empty($passwordINlogin))
+     {
+        header("Location: ../index.php?error=emptyfields");
+        exit ();
+     }
+     else /*scholar no. ko primary key banaya hai toh sch no par check karna*/
+     {
+         $sql="SELECT * FROM users WHERE username=? ;";/*check karega ki  same name se toh nahi hai*/
+         $stmt= mysqli_stmt_init($connection); 
+         if(! mysqli_stmt_prepare($stmt,$sql))
+         {
+              header("Location: ../index.php?mysqlerror");
+              exit ();
+         }
+         else
+         {
+             mysqli_stmt_bind_param($stmt,"ss",$usernameINlogin,$passwordINlogin);/* yeh apna bind karke username/password confirm karega*/
+             mysqli_stmt_execute($stmt);
+             $result = mysqli_stmt_get_result($stmt);
+             
+             if($row=mysqli_fetch_assoc($result))
+             {
+                 $pwdCheck =  ($passwordINlogin==$row['password']);
+                 
+                 if($pwdCheck==false)
+                 {
+                     header("Location: ../index.php?error=wrongpwd");
+                     exit ();
+                 }
+                 else if($pwdCheck==true)
+                 {
+                     session_start();
+                     $_SESSION['u_id']=$row['username'];
+                     $_SESSION['u_cgpa']=$row['cgpa'];
+                     $_SESSION['u_scholarno']=$row['scholarno'];
+                     $_SESSION['u_password']=$row['password'];
+                     header("Location: ../index.php?login=sucess");
+                     exit ();
+                 }
+             }
+             else
+             {
+                 header("Location: ../index.php?error=nosuchuserexists");
+                 exit ();
+             }
+         
+         }
+     }
+    }
+    else
+    {
+        header("Location: ../signup.php?");
+        exit ();
+    }    
+    
+?>
